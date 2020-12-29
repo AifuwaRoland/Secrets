@@ -99,11 +99,12 @@ app.get("/register", function (req, res) {
 
 });
 app.get("/secrets", function (req, res) {
-    if (req.isAuthenticated()) {
-        res.render("secrets");
-    } else {
-        res.redirect("/login");
-    }
+    User.find({"secret": {$ne: null}}, function(err, foundUsers){
+        if(foundUsers){
+            res.render( "secrets", {userWithSecrets: foundUsers});
+        }
+    })
+    
 });
 app.get("/logout", function (req, res) {
     req.logOut();
@@ -177,7 +178,7 @@ app.post("/login", function (req, res) {
     });
 });
 
-    app.listen(3000, function (req, res) {
+app.listen(3000, function (req, res) {
 
-        console.log("Server has started Sucessfully");
-    });
+    console.log("Server has started Sucessfully");
+});
