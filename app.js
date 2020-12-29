@@ -70,6 +70,17 @@ passport.use(new GoogleStrategy({
 app.get("/", function (req, res) {
     res.render("home");
 });
+
+app.get("/auth/google",
+    passport.authenticate("google", { scope: ['profile']  })
+);
+app.get('/auth/google/secrets',
+passport.authenticate('google', {failureRedirect: '/login'}),
+function(req, res){
+    //sucessful authentication, redirect to secret 
+    res.redirect("/secrets")
+});
+
 app.get("/login", function (req, res) {
     res.render("login");
 
