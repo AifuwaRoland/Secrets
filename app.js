@@ -1,4 +1,5 @@
-//jshint esversion:6
+
+
 require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -7,8 +8,8 @@ const mongoose = require("mongoose");
 const session = require('express-session');
 const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
-const  GoogleStrategy = require('passport-google-oauth20').Strategy;
-const findOrCreate=require('mongoose-findOrCreate');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const findOrCreate = require('mongoose-findOrCreate');
 
 
 // const bcrypt = require("bcrypt");
@@ -42,6 +43,8 @@ const userSchema = new mongoose.Schema({
     password: String
 });
 userSchema.plugin(passportLocalMongoose); // does the hasing and salting then saves it on DB
+userSchema.plugin(findOrCreate);
+
 
 
 // userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ['password'] }); //encryption for password
@@ -53,15 +56,15 @@ passport.deserializeUser(User.deserializeUser());
 
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
-    clientSecret:process.env.CLIENT_SECRET,
+    clientSecret: process.env.CLIENT_SECRET,
     callbackURL: "http://localhost:3000/auth/google/secrets",
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
-  },
-  function(accessToken, refreshToken, profile, cb) {
-    User.findOrCreate({ googleId: profile.id }, function (err, user)               {
-     return cb(err, profile);
-    });
-  }
+},
+    function (accessToken, refreshToken, profile, cb) {
+        User.findOrCreate({ googleId: profile.id }, function (err, user) {
+            return cb(err, profile);
+        });
+    }
 ));
 
 app.get("/", function (req, res) {
@@ -82,7 +85,7 @@ app.get("/secrets", function (req, res) {
         res.redirect("/login");
     }
 });
-app.get("/logout", function(req, res){
+app.get("/logout", function (req, res) {
     req.logOut();
     res.redirect("/");
 })
@@ -104,25 +107,6 @@ app.post("/register", function (req, res) {
 
 
 
-
-
-
-        // bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
-
-        //     const newUser = new User({
-        //         email: req.body.username,
-        //         password: hash
-        //     });
-        //     newUser.save(function (err) {
-        //         if (err) {
-        //             console.log(err);
-        //         } else {
-        //             res.render("secrets");
-        //         }
-        //     });
-        // });
-
-
     });
 });
 app.post("/login", function (req, res) {
@@ -141,28 +125,6 @@ app.post("/login", function (req, res) {
     })
 
 
-
-
-
-    // const username = req.body.username;
-    // const password = (req.body.password);
-
-    // User.findOne({ email: username }, function (err, foundUser) {
-    //     if (err) {
-    //         console.log(err);
-    //     } else {
-    //         if (foundUser) {
-    //             // if (foundUser.password === password) { // for hashing
-    //             bcrypt.compare(password, foundUser.password, function (err, result) {
-    //                 if (result === true) {
-    //                     res.render("secrets");
-
-    //                 }
-    //             });
-
-    //         }
-    //     }
-    // });
 
 });
 
