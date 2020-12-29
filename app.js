@@ -40,7 +40,8 @@ app.use(passport.session());
 const userSchema = new mongoose.Schema({
     email: String,
     password: String,
-    googleId:String
+    googleId: String,
+    secret: String
 });
 userSchema.plugin(passportLocalMongoose); // does the hasing and salting then saves it on DB
 userSchema.plugin(findOrCreate);
@@ -55,10 +56,11 @@ passport.use(User.createStrategy());
 passport.serializeUser(function (user, done) {
     done(null, user.id);
 });
-passport.deserializeUser(function (user, done) {
-    done(null, user);
+passport.deserializeUser(function (id, done) {
+    User.findById(id, function (err, user) {
+        done(err, user);
+    });
 });
-
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
@@ -66,10 +68,10 @@ passport.use(new GoogleStrategy({
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
 },
     function (accessToken, refreshToken, profile, cb) {
-        console.log(profile);
+        // console.log(profile);
         User.findOrCreate({ googleId: profile.id }, function (err, user) {
-            return cb(err, profile);
-            
+            return cb(err, user);
+
         });
     }
 ));
@@ -107,6 +109,33 @@ app.get("/logout", function (req, res) {
     req.logOut();
     res.redirect("/");
 })
+app.get("/submit", function (req, res) {
+    if (req.isAuthenticated()) {
+        res.render("submit");
+    } else {
+        res.redirect("/login");
+    }
+});
+app.post("/submit", function (req, res) {
+    const submittedSecret = req.body.secret;
+    // find curr user in db
+    console.log(req.user.id);
+    User.findById(req.user.id, function (err, foundUser) {
+
+        if (err) {
+            console.log(err);
+
+        } else {
+            if (foundUser) {
+                foundUser.secret = submittedSecret;
+                foundUser.save(function () {
+                    res.redirect("/secrets");
+                });
+            }
+        }
+    });
+
+});
 app.post("/register", function (req, res) {
 
 
@@ -136,18 +165,19 @@ app.post("/login", function (req, res) {
     req.login(user, function (err) {
         if (err) {
             console.log(err);
+
         } else {
-            passport.authenticate("local");
-            res.redirect("/secrets");
+            passport.authenticate("local")(req, res, function () {
+                res.redirect("/secrets");
+
+            })
+
         }
-    })
 
-
-
+    });
 });
 
+    app.listen(3000, function (req, res) {
 
-app.listen(3000, function (req, res) {
-
-    console.log("Server has started Sucessfully");
-});
+        console.log("Server has started Sucessfully");
+    });
