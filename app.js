@@ -20,7 +20,6 @@ const findOrCreate = require('mongoose-findOrCreate');
 
 
 const app = express();
-console.log(process.env.SECRET); // tap to .env
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
@@ -40,7 +39,8 @@ app.use(passport.session());
 
 const userSchema = new mongoose.Schema({
     email: String,
-    password: String
+    password: String,
+    googleId:String
 });
 userSchema.plugin(passportLocalMongoose); // does the hasing and salting then saves it on DB
 userSchema.plugin(findOrCreate);
@@ -55,10 +55,8 @@ passport.use(User.createStrategy());
 passport.serializeUser(function (user, done) {
     done(null, user.id);
 });
-passport.deserializeUser(function (id, done) {
-    User.findById(id, function (err, user) {
-        done(err, user);
-    });
+passport.deserializeUser(function (user, done) {
+    done(null, user);
 });
 
 passport.use(new GoogleStrategy({
@@ -68,8 +66,10 @@ passport.use(new GoogleStrategy({
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
 },
     function (accessToken, refreshToken, profile, cb) {
+        console.log(profile);
         User.findOrCreate({ googleId: profile.id }, function (err, user) {
             return cb(err, profile);
+            
         });
     }
 ));
